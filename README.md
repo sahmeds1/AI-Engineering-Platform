@@ -1,4 +1,3 @@
-
 # Agentic AI Chatbot
 
 ## Project Overview
@@ -42,3 +41,55 @@ built using Python and modern AI frameworks.
 ## Project Type
 
 Independent AI Engineering Portfolio Project.
+
+
+
+
+
+## Development Setup
+
+### Requirements
+
+- Python 3.12+
+- Git
+- VS Code
+
+### Create virtual environment
+
+```powershell
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+```
+
+### Install dependencies
+
+```powershell
+python -m pip install --upgrade pip
+python -m pip install -r requirements.txt
+```
+
+### Configure environment
+
+```powershell
+Copy-Item .env.example .env
+```
+
+### Run application
+
+```powershell
+uvicorn app.main:app --reload
+```
+
+### Run tests
+
+```powershell
+python -m pytest -v
+```
+
+### API documentation
+
+http://127.0.0.1:8000/docs
+
+### Health endpoint
+
+http://127.0.0.1:8000/health
