@@ -1,4 +1,5 @@
-
+import pytest
+from pydantic import ValidationError
 from app.core.config import Settings
 
 
@@ -30,3 +31,47 @@ def test_timeout_validation():
     )
 
     assert settings.request_timeout_seconds == 60
+
+@pytest.mark.parametrize(
+    "origins",
+    [
+        ["http://localhost:5173"],
+        [
+            "http://localhost:5173",
+            "http://127.0.0.1:5173",
+        ],
+        ["https://example.com"],
+        [],
+    ],
+)
+def test_valid_allowed_origins(origins):
+    settings = Settings(
+        _env_file=None,
+        allowed_origins=origins,
+    )
+
+    assert settings.allowed_origins == origins
+
+
+def test_default_allowed_origins():
+    settings = Settings(_env_file=None)
+
+    assert settings.allowed_origins == [
+        "http://localhost:5173"
+    ]
+
+
+@pytest.mark.parametrize(
+    "origins",
+    [
+        [123],
+        ["http://localhost:5173", 123],
+        [None],
+    ],
+)
+def test_invalid_allowed_origins(origins):
+    with pytest.raises(ValidationError):
+        Settings(
+            _env_file=None,
+            allowed_origins=origins,
+        )
