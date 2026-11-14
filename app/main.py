@@ -5,7 +5,7 @@ from fastapi import FastAPI
 
 from app.core.config import get_settings
 from app.core.logging_config import configure_logging
-from app.schemas.health import HealthResponse
+from app.schemas.health import HealthResponse, VersionResponse
 
 
 settings = get_settings()
@@ -29,4 +29,13 @@ def health_check() -> HealthResponse:
         status="healthy",
         application=settings.app_name,
         environment=settings.environment,
+    )
+
+@app.get("/version", response_model=VersionResponse)
+def get_application_version() -> VersionResponse:
+    logger.info("Application version Requested")
+    
+    return VersionResponse(
+        application=settings.app_name,
+        version=settings.api_version,
     )
