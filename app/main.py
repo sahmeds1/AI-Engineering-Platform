@@ -1,6 +1,6 @@
 
 import logging
-
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi import FastAPI
 
 from app.core.config import get_settings
@@ -31,6 +31,13 @@ def health_check() -> HealthResponse:
         environment=settings.environment,
     )
 
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=settings.allowed_origins,
+    allow_credentials=True,
+    allow_methods=["GET","POST","PUT","DELETE"],
+    allow_headers=["Authorization","Content-Type"]
+)
 @app.get("/version", response_model=VersionResponse)
 def get_application_version() -> VersionResponse:
     logger.info("Application version Requested")

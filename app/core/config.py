@@ -16,6 +16,7 @@ class Settings(BaseSettings):
         extra="ignore",
     )
 
+    
     app_name: str = "Agentic AI Chatbot"
     environment: str = "development"
     debug: bool = False
@@ -28,7 +29,14 @@ class Settings(BaseSettings):
         gt=0,
         le=300,
     )
-
+    max_conversation_history: int = Field(
+            default=20,
+            ge=1,
+            le=100,
+        )
+    allowed_origins: list[str] = Field(
+        default_factory=lambda: ["http://localhost:5173"]
+    )    
 
 @lru_cache
 def get_settings() -> Settings:
