@@ -17,3 +17,15 @@ def test_health_endpoint():
     assert data["status"] == "healthy"
     assert data["application"] == "Agentic AI Chatbot"
     assert data["environment"] == "development"
+
+
+def test_health_response_structure():
+    response = client.get("/health")
+
+    data = response.json()
+
+    assert set(data.keys()) == {
+        "status",
+        "application",
+        "environment",
+    }
