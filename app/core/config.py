@@ -1,13 +1,15 @@
 
 from functools import lru_cache
 
-from pydantic import Field
+
+from pydantic import Field, SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
     """Centralized application configuration."""
-
+    openai_api_key: str | None = None
+    openai_api_key: SecretStr | None = None
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",
