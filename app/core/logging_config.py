@@ -1,24 +1,38 @@
 
 import logging
 
+from app.core.security import redact_secrets
 
-def configure_logging(log_level: str = "INFO") -> None:
-    """Configure consistent application-wide logging."""
 
-    numeric_level = getattr(
-        logging,
-        log_level.upper(),
-        logging.INFO,
-    )
+class SecretRedactionFilter(logging.Filter):
+    """
+    Prevent common secret patterns from appearing in logs.
+    """
 
+    def filter(self, record: logging.LogRecord) -> bool:
+        try:
+            message = record.getMessage()
+            record.msg = redact_secrets(message)
+            record.args = ()
+        except Exception:
+            # Fail closed: do not emit an unsanitized message.
+            record.msg = "[LOG MESSAGE REDACTED]"
+            record.args = ()
+
+        return True
+
+
+def configure_logging(log_level: str) -> None:
     logging.basicConfig(
-        level=numeric_level,
+        level=log_level.upper(),
         format=(
-            "%(asctime)s | "
-            "%(levelname)s | "
-            "%(name)s | "
-            "%(message)s"
+            "%(asctime)s | %(levelname)s | "
+            "%(name)s | %(message)s"
         ),
-        datefmt="%Y-%m-%d %H:%M:%S",
         force=True,
     )
+
+    root_logger = logging.getLogger()
+
+    for handler in root_logger.handlers:
+        handler.addFilter(SecretRedactionFilter())
