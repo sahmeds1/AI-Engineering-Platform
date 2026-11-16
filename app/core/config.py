@@ -7,6 +7,13 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
+    
+    external_service_timeout_seconds: float = Field(
+        default=5.0,
+        gt=0,
+        le=60,
+    )
+    
     """Centralized application configuration."""
     openai_api_key: str | None = None
     openai_api_key: SecretStr | None = None
