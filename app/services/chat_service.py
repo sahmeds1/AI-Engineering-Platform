@@ -4,6 +4,13 @@ from uuid import uuid4
 
 from app.core.config import get_settings
 from app.core.exceptions import ExternalServiceTimeoutException
+from app.core.config import get_settings
+
+settings = get_settings()
+
+external_service_semaphore = asyncio.Semaphore(
+    settings.max_concurrent_external_requests
+)
 from app.schemas.chat import (
     ChatMessage,
     ChatRequest,
@@ -95,7 +102,7 @@ class ChatService:
         return (
             f"Async chatbot response: "
             f"I received your message: {message}"
-        )
+        )   
 
 
 # Create a reusable service instance.

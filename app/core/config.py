@@ -8,6 +8,12 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 class Settings(BaseSettings):
     
+    max_concurrent_external_requests: int = Field(
+    default=3,
+    gt=0,
+    le=100,
+)
+    
     external_service_timeout_seconds: float = Field(
         default=5.0,
         gt=0,
