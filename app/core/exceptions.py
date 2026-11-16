@@ -59,3 +59,11 @@ class ExternalServiceException(ApplicationException):
             message="An external service is temporarily unavailable.",
             status_code=503,
         )
+
+class ExternalServiceTimeoutException(ApplicationException):
+    def __init__(self) -> None:
+        super().__init__(
+            code="EXTERNAL_SERVICE_TIMEOUT",
+            message="The external service did not respond in time.",
+            status_code=504,
+        )
