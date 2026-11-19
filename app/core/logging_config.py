@@ -23,8 +23,12 @@ class SecretRedactionFilter(logging.Filter):
 
 
 def configure_logging(log_level: str) -> None:
+    level = getattr(logging, log_level.upper(), logging.INFO)
+    if not isinstance(level, int):
+        level = logging.INFO
+
     logging.basicConfig(
-        level=log_level.upper(),
+        level=level,
         format=(
             "%(asctime)s | %(levelname)s | "
             "%(name)s | %(message)s"
