@@ -11,7 +11,7 @@ from app.core.exceptions import ApplicationException
 from app.schemas.errors import ErrorResponse
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api.routes import chat, health, version
+from app.api.routes import auth, chat, health, version
 from app.core.config import get_settings
 from app.core.logging_config import configure_logging
 
@@ -38,6 +38,11 @@ app.include_router(version.router)
 
 app.include_router(
     chat.router,
+    prefix=f"/api/{settings.api_version}",
+)
+
+app.include_router(
+    auth.router,
     prefix=f"/api/{settings.api_version}",
 )
 

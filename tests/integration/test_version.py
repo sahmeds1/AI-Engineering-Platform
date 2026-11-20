@@ -16,9 +16,8 @@ def test_version_endpoint(monkeypatch):
     )
 
     monkeypatch.setattr(
-        main_module,
-        "settings",
-        test_settings,
+        "app.api.routes.version.get_settings",
+        lambda: test_settings,
     )
 
     response = client.get("/version")

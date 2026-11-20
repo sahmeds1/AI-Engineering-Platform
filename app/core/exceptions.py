@@ -67,3 +67,12 @@ class ExternalServiceTimeoutException(ApplicationException):
             message="The external service did not respond in time.",
             status_code=504,
         )
+
+
+class InvalidTokenException(ApplicationException):
+    def __init__(self) -> None:
+        super().__init__(
+            code="INVALID_TOKEN",
+            message="Authentication is required or the token is invalid.",
+            status_code=401,
+        )

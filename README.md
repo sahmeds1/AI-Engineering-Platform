@@ -71,7 +71,7 @@ python -m pip install -r requirements.txt
 ### Configure environment
 
 ```powershell
-Copy-Item .env.example .env
+Copy-Item app\.env.example .env
 ```
 
 ### Run application
