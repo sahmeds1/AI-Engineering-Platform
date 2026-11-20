@@ -13,7 +13,11 @@ client = TestClient(app)
 
 
 @pytest.mark.asyncio
-async def test_two_chat_requests_can_run_concurrently():
+async def test_two_chat_requests_can_run_concurrently(monkeypatch):
+    monkeypatch.setattr(
+        "app.services.chat_service.get_settings",
+        lambda: SimpleNamespace(external_service_timeout_seconds=5.0),
+    )
     transport = httpx.ASGITransport(app=app)
 
     async with httpx.AsyncClient(

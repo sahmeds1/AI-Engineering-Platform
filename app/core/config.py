@@ -7,7 +7,12 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
-    
+    jwt_secret_key: SecretStr = Field(
+        default=SecretStr("development-only-change-this-secret"),
+        min_length=32,
+    )
+    jwt_algorithm: str = "HS256"
+
     external_service_timeout_seconds: float = Field(
         default=5.0,
         gt=0,

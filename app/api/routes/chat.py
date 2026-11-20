@@ -23,6 +23,13 @@ router = APIRouter(
     response_model=ChatResponse,
     status_code=status.HTTP_200_OK,
 )
+async def send_message(
+    request: ChatRequest,
+    service: ChatService = Depends(get_chat_service),
+) -> ChatResponse:
+    """Receive a user message and return a chatbot response."""
+    return await service.send_message(request)
+
 
 @router.get(
     "/{conversation_id}",
@@ -42,12 +49,5 @@ def get_conversation_history(
 
     if history is None:
         raise ConversationNotFoundException()
-    
 
-async def send_message(
-    request: ChatRequest,
-    service: ChatService = Depends(get_chat_service),
-) -> ChatResponse:
-    """Receive a user message and return a chatbot response."""
-
-    return await service.send_message(request)
+    return history
