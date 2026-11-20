@@ -7,6 +7,7 @@ from fastapi.security import (
 
 from app.core.exceptions import InvalidTokenException
 from app.schemas.auth import UserResponse
+from app.schemas.auth import TokenClaims
 from app.services.auth_service import auth_service
 from app.services.chat_service import ChatService
 
@@ -52,3 +53,8 @@ def require_role(*allowed_roles: str):
         return current_user
 
     return role_checker
+) -> TokenClaims:
+    if credentials is None:
+        raise InvalidTokenException()
+
+    return auth_service.get_user_from_token(credentials.credentials)

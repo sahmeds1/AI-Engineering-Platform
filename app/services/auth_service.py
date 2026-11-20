@@ -73,6 +73,16 @@ class AuthService:
         )
 
     def get_user_from_token(self, token: str) -> UserResponse:
+import jwt
+from pydantic import ValidationError
+
+from app.core.config import get_settings
+from app.core.exceptions import InvalidTokenException
+from app.schemas.auth import TokenClaims
+
+
+class AuthService:
+    def get_user_from_token(self, token: str) -> TokenClaims:
         settings = get_settings()
 
         try:
@@ -95,6 +105,8 @@ class AuthService:
             return user_store.to_user_response(user)
 
         except jwt.InvalidTokenError as exc:
+            return TokenClaims.model_validate(payload)
+        except (jwt.InvalidTokenError, ValidationError) as exc:
             raise InvalidTokenException() from exc
 
 

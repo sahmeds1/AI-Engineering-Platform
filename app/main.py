@@ -12,6 +12,7 @@ from app.schemas.errors import ErrorResponse
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.routes import admin, auth,chat, health, version
+from app.api.routes import auth, chat, health, version
 from app.core.config import get_settings
 from app.core.logging_config import configure_logging
 

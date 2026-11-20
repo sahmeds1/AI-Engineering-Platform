@@ -1,13 +1,18 @@
 
 from fastapi.testclient import TestClient
 
+from app.core.config import Settings
 from app.main import app
 
 
 client = TestClient(app)
 
 
-def test_health_endpoint():
+def test_health_endpoint(monkeypatch):
+    monkeypatch.setattr(
+        "app.api.routes.health.get_settings",
+        lambda: Settings(_env_file=None),
+    )
     response = client.get("/health")
 
     assert response.status_code == 200

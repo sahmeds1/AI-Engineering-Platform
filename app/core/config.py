@@ -9,6 +9,18 @@ DEFAULT_DEVELOPMENT_JWT_SECRET = "development-only-change-this-secret"
 
 
 class Settings(BaseSettings):
+    jwt_secret_key: SecretStr = Field(
+        default=SecretStr("development-only-change-this-secret"),
+        min_length=32,
+    )
+    jwt_algorithm: str = "HS256"
+
+    external_service_timeout_seconds: float = Field(
+        default=5.0,
+        gt=0,
+        le=60,
+    )
+    
     """Centralized application configuration."""
 
     model_config = SettingsConfigDict(

@@ -24,6 +24,7 @@ class SecretRedactionFilter(logging.Filter):
 
 def configure_logging(log_level: str) -> None:
     level = getattr(logging, log_level.upper(), logging.INFO)
+    level = logging.getLevelName(log_level.upper())
     if not isinstance(level, int):
         level = logging.INFO
 

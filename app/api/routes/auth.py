@@ -8,6 +8,10 @@ from app.schemas.auth import (
     UserResponse,
 )
 from app.services.auth_service import auth_service
+from fastapi import APIRouter, Depends
+
+from app.api.dependencies import get_current_user
+from app.schemas.auth import TokenClaims
 
 
 router = APIRouter(
@@ -43,4 +47,9 @@ def login(request: LoginRequest) -> TokenResponse:
 def get_my_profile(
     current_user: UserResponse = Depends(get_current_user),
 ) -> UserResponse:
+    return current_user
+@router.get("/me", response_model=TokenClaims)
+def get_my_profile(
+    current_user: TokenClaims = Depends(get_current_user),
+) -> TokenClaims:
     return current_user
