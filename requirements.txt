@@ -7,3 +7,5 @@ pytest
 httpx
 pytest-asyncio
 PyJWT>=2.10,<3
+openai
+openai==3.57.0
