@@ -1,16 +1,15 @@
 
-from fastapi import APIRouter, Depends, status
-from app.core.exceptions import ConversationNotFoundException
-from app.api.dependencies import get_chat_service
-from app.schemas.chat import ChatRequest, ChatResponse
-from app.services.chat_service import ChatService
-from fastapi import APIRouter, Depends, HTTPException, Path, status
+from fastapi import APIRouter, Depends, Path, status
 
+from app.api.dependencies import get_chat_service, get_current_user
+from app.core.exceptions import ConversationNotFoundException
+from app.schemas.auth import UserResponse
 from app.schemas.chat import (
     ChatRequest,
     ChatResponse,
     ConversationHistoryResponse,
 )
+from app.services.chat_service import ChatService
 
 router = APIRouter(
     prefix="/chat",
@@ -26,6 +25,10 @@ router = APIRouter(
 async def send_message(
     request: ChatRequest,
     service: ChatService = Depends(get_chat_service),
+    current_user: UserResponse = Depends(get_current_user),
+) -> ChatResponse:
+    """Receive a user message and return a chatbot response."""
+    return await service.send_message(request, current_user.id)
 ) -> ChatResponse:
     """Receive a user message and return a chatbot response."""
     return await service.send_message(request)
@@ -41,10 +44,11 @@ def get_conversation_history(
         max_length=100,
     ),
     service: ChatService = Depends(get_chat_service),
+    current_user: UserResponse = Depends(get_current_user),
 ) -> ConversationHistoryResponse:
-
     history = service.get_conversation_history(
-        conversation_id
+        conversation_id,
+        current_user.id,
     )
 
     if history is None:
