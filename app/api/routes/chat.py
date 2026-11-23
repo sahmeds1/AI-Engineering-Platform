@@ -29,9 +29,7 @@ async def send_message(
 ) -> ChatResponse:
     """Receive a user message and return a chatbot response."""
     return await service.send_message(request, current_user.id)
-) -> ChatResponse:
-    """Receive a user message and return a chatbot response."""
-    return await service.send_message(request)
+
 
 
 @router.get(

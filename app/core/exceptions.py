@@ -84,4 +84,3 @@ class InvalidTokenException(ApplicationException):
             message="Authentication is required or the token is invalid.",
             status_code=401,
         )
-        )

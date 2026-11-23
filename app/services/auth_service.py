@@ -1,3 +1,4 @@
+
 from datetime import datetime, timedelta, timezone
 
 import jwt
@@ -21,6 +22,7 @@ password_hasher = PasswordHash.recommended()
 
 
 class AuthService:
+    """Handles user registration, authentication, and JWT validation."""
 
     def register(self, request: RegisterRequest) -> UserResponse:
         email = str(request.email).strip().lower()
@@ -39,6 +41,7 @@ class AuthService:
             raise UserAlreadyExistsException() from exc
 
     def login(self, email: str, password: str) -> TokenResponse:
+        email = email.strip().lower()
         user = user_store.get_by_email(email)
 
         if user is None or not password_hasher.verify(
@@ -73,16 +76,8 @@ class AuthService:
         )
 
     def get_user_from_token(self, token: str) -> UserResponse:
-import jwt
-from pydantic import ValidationError
+        """Validate a JWT and return its associated user."""
 
-from app.core.config import get_settings
-from app.core.exceptions import InvalidTokenException
-from app.schemas.auth import TokenClaims
-
-
-class AuthService:
-    def get_user_from_token(self, token: str) -> TokenClaims:
         settings = get_settings()
 
         try:
@@ -91,23 +86,20 @@ class AuthService:
                 settings.jwt_secret_key.get_secret_value(),
                 algorithms=[settings.jwt_algorithm],
             )
-
-            user_id = payload.get("sub")
-
-            if not isinstance(user_id, str):
-                raise InvalidTokenException()
-
-            user = user_store.get_by_id(user_id)
-
-            if user is None:
-                raise InvalidTokenException()
-
-            return user_store.to_user_response(user)
-
         except jwt.InvalidTokenError as exc:
-            return TokenClaims.model_validate(payload)
-        except (jwt.InvalidTokenError, ValidationError) as exc:
             raise InvalidTokenException() from exc
+
+        user_id = payload.get("sub")
+
+        if not isinstance(user_id, str):
+            raise InvalidTokenException()
+
+        user = user_store.get_by_id(user_id)
+
+        if user is None:
+            raise InvalidTokenException()
+
+        return user_store.to_user_response(user)
 
 
 auth_service = AuthService()

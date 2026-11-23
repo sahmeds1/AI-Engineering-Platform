@@ -11,19 +11,33 @@ from app.core.exceptions import ApplicationException
 from app.schemas.errors import ErrorResponse
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api.routes import admin, auth,chat, health, version
-from app.api.routes import auth, chat, health, version
+from app.api.routes import admin, auth, chat, health, version
 from app.core.config import get_settings
 from app.core.logging_config import configure_logging
+
+from contextlib import asynccontextmanager
+from collections.abc import AsyncIterator
+
+from app.api.dependencies import close_llm_provider
 
 settings = get_settings()
 
 configure_logging(settings.log_level)
 
+@asynccontextmanager
+async def lifespan(application: FastAPI) -> AsyncIterator[None]:
+    """Manage application startup and shutdown resources."""
+
+    try:
+        yield
+    finally:
+        await close_llm_provider()
+
 app = FastAPI(
     title=settings.app_name,
     version=settings.api_version,
     debug=settings.debug,
+    lifespan=lifespan,
 )
 
 app.add_middleware(
@@ -37,25 +51,21 @@ app.add_middleware(
 app.include_router(health.router)
 app.include_router(version.router)
 
-app.include_router(
-    chat.router,
-    prefix=f"/api/{settings.api_version}",
-)
-
+# API v1 routers
 app.include_router(
     auth.router,
     prefix=f"/api/{settings.api_version}",
 )
 
 app.include_router(
-    admin.router,
+    chat.router,
     prefix=f"/api/{settings.api_version}",
 )
+
 app.include_router(
     admin.router,
     prefix=f"/api/{settings.api_version}",
 )
-
 @app.get("/")
 def root():
     return {
