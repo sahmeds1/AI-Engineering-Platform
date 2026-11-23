@@ -1,78 +1,158 @@
+
 import asyncio
-from types import SimpleNamespace
+from typing import Sequence
 
 import httpx
 import pytest
-from fastapi.testclient import TestClient
 
-from app.main import app
-from app.services.chat_service import ChatService
+from app.api.dependencies import get_llm_provider
+from app.llm.base import (
+    BaseLLMProvider,
+    LLMMessage,
+    LLMResponse,
+)
 
 
-client = TestClient(app)
+
+class FakeLLMProvider(BaseLLMProvider):
+    """Fake provider for integration testing without API calls."""
+
+    def __init__(self, delay: float = 0.05) -> None:
+        self.delay = delay
+        self.active_requests = 0
+        self.max_concurrent_requests = 0
+
+    async def generate(
+        self,
+        messages: Sequence[LLMMessage],
+        *,
+        temperature: float = 0.2,
+        max_output_tokens: int = 800,
+    ) -> LLMResponse:
+
+        self.active_requests += 1
+
+        self.max_concurrent_requests = max(
+            self.max_concurrent_requests,
+            self.active_requests,
+        )
+
+        try:
+            await asyncio.sleep(self.delay)
+
+            last_message = messages[-1].content
+
+            return LLMResponse(
+                content=f"Fake AI response: {last_message}",
+                provider="fake",
+                model="fake-model",
+            )
+        finally:
+            self.active_requests -= 1
 
 
 @pytest.mark.asyncio
-async def test_two_chat_requests_can_run_concurrently(monkeypatch):
-    monkeypatch.setattr(
-        "app.services.chat_service.get_settings",
-        lambda: SimpleNamespace(external_service_timeout_seconds=5.0),
-    )
-    transport = httpx.ASGITransport(app=app)
+async def test_two_chat_requests_can_run_concurrently(authenticated_app):
 
-    async with httpx.AsyncClient(
-        transport=transport,
-        base_url="http://test",
-    ) as async_client:
-        responses = await asyncio.gather(
-            async_client.post(
-                "/api/v1/chat",
-                json={"message": "First request"},
-            ),
-            async_client.post(
-                "/api/v1/chat",
-                json={"message": "Second request"},
-            ),
+    fake_provider = FakeLLMProvider(delay=0.1)
+
+    authenticated_app.dependency_overrides[get_llm_provider] = (
+        lambda: fake_provider
+    )
+
+    try:
+        transport = httpx.ASGITransport(app=authenticated_app)
+
+        async with httpx.AsyncClient(
+            transport=transport,
+            base_url="http://test",
+        ) as async_client:
+
+            responses = await asyncio.gather(
+                async_client.post(
+                    "/api/v1/chat",
+                    json={"message": "First request"},
+                ),
+                async_client.post(
+                    "/api/v1/chat",
+                    json={"message": "Second request"},
+                ),
+            )
+
+        assert responses[0].status_code == 200
+        assert responses[1].status_code == 200
+
+        assert (
+            "First request"
+            in responses[0].json()["response"]
         )
 
-    assert responses[0].status_code == 200
-    assert responses[1].status_code == 200
+        assert (
+            "Second request"
+            in responses[1].json()["response"]
+        )
 
-    assert "First request" in responses[0].json()["response"]
-    assert "Second request" in responses[1].json()["response"]
+        assert fake_provider.max_concurrent_requests == 2
+
+    finally:
+        authenticated_app.dependency_overrides.pop(
+            get_llm_provider,
+            None,
+        )
 
 
 @pytest.mark.asyncio
-async def test_external_service_timeout_returns_504(monkeypatch):
-    async def slow_service(self, message: str) -> str:
-        await asyncio.sleep(0.1)
-        return "This response should not be returned"
+async def test_llm_timeout_returns_504(monkeypatch, authenticated_app):
 
-    monkeypatch.setattr(
-        ChatService,
-        "_simulate_external_service",
-        slow_service,
-    )
+    fake_provider = FakeLLMProvider(delay=0.1)
+
+    authenticated_app.dependency_overrides[get_llm_provider] = (
+    lambda: fake_provider
+)
 
     monkeypatch.setattr(
         "app.services.chat_service.get_settings",
-        lambda: SimpleNamespace(external_service_timeout_seconds=0.01),
+        lambda: type(
+            "TestSettings",
+            (),
+            {
+                "max_conversation_history": 20,
+                "llm_timeout_seconds": 0.01,
+            },
+        )(),
     )
 
-    transport = httpx.ASGITransport(app=app)
+    try:
+        transport = httpx.ASGITransport(app=authenticated_app)
 
-    async with httpx.AsyncClient(
-        transport=transport,
-        base_url="http://test",
-    ) as async_client:
-        response = await async_client.post(
-            "/api/v1/chat",
-            json={"message": "Test timeout"},
+        async with httpx.AsyncClient(
+            transport=transport,
+            base_url="http://test",
+        ) as async_client:
+
+            response = await async_client.post(
+                "/api/v1/chat",
+                json={"message": "Test timeout"},
+            )
+
+        assert response.status_code == 504
+
+        data = response.json()
+
+        assert (
+            data["error"]["code"]
+            == "EXTERNAL_SERVICE_TIMEOUT"
         )
 
-    assert response.status_code == 504
+        assert data["error"]["request_id"]
 
-    data = response.json()
-    assert data["error"]["code"] == "EXTERNAL_SERVICE_TIMEOUT"
-    assert data["error"]["request_id"]
-    assert "request_id" not in data["error"]["message"]
+        assert (
+            "request_id"
+            not in data["error"]["message"]
+        )
+
+    finally:
+        authenticated_app.dependency_overrides.pop(
+    get_llm_provider,
+    None,
+)
